@@ -44,7 +44,13 @@
                             <outlet property="delegate" destination="Gn0-u9-mi1" id="6Jd-fw-Gg2"/>
                         </connections>
                     </tableView>
-                    <navigationItem key="navigationItem" id="Lcw-Oq-oTG"/>
+                    <navigationItem key="navigationItem" id="Lcw-Oq-oTG">
+                        <barButtonItem key="rightBarButtonItem" systemItem="add" id="LeX-cY-UTB">
+                            <connections>
+                                <action selector="addButtonTapped:" destination="Gn0-u9-mi1" id="U1m-ik-Zsv"/>
+                            </connections>
+                        </barButtonItem>
+                    </navigationItem>
                     <refreshControl key="refreshControl" opaque="NO" multipleTouchEnabled="YES" contentMode="center" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" id="SYw-jT-7vv">
                         <autoresizingMask key="autoresizingMask"/>
                         <connections>

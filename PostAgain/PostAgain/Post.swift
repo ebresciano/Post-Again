@@ -10,6 +10,25 @@ import Foundation
 
 class Post {
     
+    var queryTimestamp: NSTimeInterval {
+        
+        return timestamp - 0.000001
+    }
+    
+    var endpoint: NSURL? {
+     return PostController.baseURL?.URLByAppendingPathComponent(identifier.UUIDString).URLByAppendingPathExtension("json")
+    }
+    
+    var jsonValue: [String:AnyObject] {
+        return ["username":userName,
+        "text":text,
+        "timestamp":timestamp]
+    }
+    
+    var jsonData: NSData? {
+        return try? NSJSONSerialization.dataWithJSONObject(jsonValue, options: .PrettyPrinted)
+    }
+    
     let userName: String
     let text: String
     let timestamp: NSTimeInterval
@@ -23,17 +42,17 @@ class Post {
         
     }
     
-    init?(jsonDictionary: [String:AnyObject]) {
+    init?(jsonDictionary: [String:AnyObject], identifier: String) {
         guard let userName = jsonDictionary["username"] as? String,
             text = jsonDictionary["text"] as? String,
-            timestamp = jsonDictionary ["timestamp"] as? NSTimeInterval,
-            identifier = jsonDictionary["identifier"] as? NSUUID else {
+            timestamp = jsonDictionary ["timestamp"] as? NSTimeInterval
+            else {
                 return nil }
         
         self.userName = userName
         self.text = text
         self.timestamp = timestamp
-        self.identifier = identifier
+        self.identifier = NSUUID(UUIDString: identifier) ?? NSUUID()
         
     }
 

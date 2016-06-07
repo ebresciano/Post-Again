@@ -22,27 +22,35 @@ class PostController {
         }
     }
     
-//    init() {
-//        
-//        fetchPosts()
-//    }
+    init() {
+        
+        fetchPosts()
+    }
     
     func fetchPosts(reset reset: Bool = true, completion: ((posts: [Post]) -> Void)? = nil) {
         guard let unwrappedURL = PostController.endpoint
             else {fatalError("URL optional is nil")}
         
+        let queryEndInterval = reset ? NSDate().timeIntervalSince1970 : posts.last?.timestamp ?? NSDate().timeIntervalSince1970
+        
+        let urlParameters = [
+            "orderBy": "\"timestamp\"",
+            "endAt": "\(queryEndInterval)",
+            "limitToLast": "15",
+            ]
+        
         NetWorkController.performRequestForURL(unwrappedURL, httpMethod: .Get) { (data, error) in
             if let data = data,
                 responseDataString = NSString(data: data, encoding: NSUTF8StringEncoding) {
-                guard let responseDictionary = (try? NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)) as? [String:AnyObject],
-                    postDictionaries = responseDictionary["posts"] as? [[String:AnyObject]] else {
+                guard let responseDictionary = (try? NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)) as? [String:[String:AnyObject]]
+                    else {
                         print("Unable to serialize JSON. \nResponse: \(responseDataString)")
                         completion?(posts: [])
                         return
                 }
                 
-                let posts = postDictionaries.flatMap{Post(jsonDictionary:$0)}
-                //completion?(posts: posts)
+                let posts = responseDictionary.flatMap{Post(jsonDictionary:$0.1, identifier:$0.0)}
+                  completion?(posts: posts)
                 
                 let postsSorted = posts.sort({$0.0.timestamp > $0.1.timestamp})
                 
@@ -58,6 +66,20 @@ class PostController {
                     return
                 })
             }
+        }
+    }
+    
+    func addPost(userName: String, text: String) {
+        let post = Post(userName: userName, text: text)
+        guard let requestURL = post.endpoint else {
+            return
+        }
+        
+        NetWorkController.performRequestForURL(requestURL, httpMethod: .Put, body: post.jsonData) { (data, error) in
+            if error != nil { print("ERROR: \(error?.localizedDescription)") } else {
+                print("Success yay!")
+            }
+
         }
     }
 }

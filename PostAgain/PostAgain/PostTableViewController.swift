@@ -14,7 +14,7 @@ class PostTableViewController: UITableViewController,PostControllerDelegate {
         super.viewDidLoad()
         tableView.estimatedRowHeight = 50
         tableView.rowHeight = UITableViewAutomaticDimension
-        
+        postController.delegate = self
         UIApplication.sharedApplication().networkActivityIndicatorVisible = true
         
     }
@@ -29,7 +29,7 @@ class PostTableViewController: UITableViewController,PostControllerDelegate {
     }
     
     override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier("reuseIdentifier", forIndexPath: indexPath)
+        let cell = tableView.dequeueReusableCellWithIdentifier("postCell", forIndexPath: indexPath)
         let post = postController.posts[indexPath.row]
         cell.textLabel?.text = post.text
         cell.detailTextLabel?.text = "\(indexPath.row) \(post.userName) \(NSDate(timeIntervalSince1970: post.timestamp))"
@@ -37,12 +37,71 @@ class PostTableViewController: UITableViewController,PostControllerDelegate {
         return cell
     }
     
+    override func tableView(tableView: UITableView, willDisplayCell cell: UITableViewCell, forRowAtIndexPath indexPath: NSIndexPath) {
+        if indexPath.row+1 == postController.posts.count {
+            
+            postController.fetchPosts(reset: false, completion: { (newPosts) in
+                
+                if !newPosts.isEmpty {
+                    
+                    self.tableView.reloadData()
+                }
+            })
+        }
+    }
+    
     func postsUpdated(posts: [Post]) {
         tableView.reloadData()
         
         UIApplication.sharedApplication().networkActivityIndicatorVisible = false
-        
     }
+    
+    func presentNewPostAlert() {
+        let alertController = UIAlertController(title: "New post", message: nil, preferredStyle: .Alert)
+        
+        var userNameTextField: UITextField?
+        var messageTextField: UITextField?
+        
+        alertController.addTextFieldWithConfigurationHandler { (postContent) in
+            let messageTextField = postContent
+            
+            alertController.addTextFieldWithConfigurationHandler({ (usernameContent) in
+                let userNameTextField = usernameContent
+            })
+        }
+
+        let postAlertAction = UIAlertAction(title: "Post", style: .Default) { (action) in
+            guard let userName = userNameTextField?.text where !userName.isEmpty,
+                let text = messageTextField?.text where !text.isEmpty else {
+                    
+                    self.presentErrorAlert()
+                    
+                    return
+            }
+            
+             self.postController.addPost(userName, text: text)
+        }
+        
+        alertController.addAction(postAlertAction)
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .Cancel, handler: nil)
+        alertController.addAction(cancelAction)
+        
+        presentViewController(alertController, animated: true, completion: nil)
+
+    }
+    
+    func presentErrorAlert() {
+        let errorAlert = UIAlertController(title: "Error", message: "Missing required fields", preferredStyle: .Alert)
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .Cancel, handler: nil)
+        errorAlert.addAction(cancelAction)
+        
+        presentViewController(errorAlert, animated: true, completion: nil)
+
+    }
+    
+    //MARK: - Actions
     
     @IBAction func refreshControlPulled(sender: UIRefreshControl) {
         
@@ -53,58 +112,12 @@ class PostTableViewController: UITableViewController,PostControllerDelegate {
             sender.endRefreshing()
             
             UIApplication.sharedApplication().networkActivityIndicatorVisible = false
-            
-            
-            
         }
     }
     
-    
-    
-    /*
-     // Override to support conditional editing of the table view.
-     override func tableView(tableView: UITableView, canEditRowAtIndexPath indexPath: NSIndexPath) -> Bool {
-     // Return false if you do not want the specified item to be editable.
-     return true
-     }
-     */
-    
-    /*
-     // Override to support editing the table view.
-     override func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
-     if editingStyle == .Delete {
-     // Delete the row from the data source
-     tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
-     } else if editingStyle == .Insert {
-     // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-     }
-     }
-     */
-    
-    /*
-     // Override to support rearranging the table view.
-     override func tableView(tableView: UITableView, moveRowAtIndexPath fromIndexPath: NSIndexPath, toIndexPath: NSIndexPath) {
-     
-     }
-     */
-    
-    /*
-     // Override to support conditional rearranging of the table view.
-     override func tableView(tableView: UITableView, canMoveRowAtIndexPath indexPath: NSIndexPath) -> Bool {
-     // Return false if you do not want the item to be re-orderable.
-     return true
-     }
-     */
-    
-    /*
-     // MARK: - Navigation
-     
-     // In a storyboard-based application, you will often want to do a little preparation before navigation
-     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-     // Get the new view controller using segue.destinationViewController.
-     // Pass the selected object to the new view controller.
-     }
-     */
+    @IBAction func addButtonTapped(sender: AnyObject) {
+        presentNewPostAlert()
+    }
     
     
 }
